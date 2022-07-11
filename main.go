@@ -121,15 +121,19 @@ func findSupervisordConf() (string, error) {
 	return "", fmt.Errorf("fail to find supervisord.conf")
 }
 
+// 启动服务
 func runServer() {
 	// infinite loop for handling Restart ('reload' command)
+	// 加载env file，把配置的环境变量加载进Env
 	loadEnvFile()
 	for {
 		if len(options.Configuration) <= 0 {
 			options.Configuration, _ = findSupervisordConf()
 		}
 		s := NewSupervisor(options.Configuration)
+		// 创建一个线程监听退出消息
 		initSignals(s)
+		// 调用reload
 		if _, _, _, sErr := s.Reload(); sErr != nil {
 			panic(sErr)
 		}
@@ -159,22 +163,25 @@ func getSupervisordLogFile(configFile string) string {
 func main() {
 	ReapZombie()
 
+	// 如果没有子命令则直接启动
 	// when execute `supervisord` without sub-command, it should start the server
 	parser.Command.SubcommandsOptional = true
 	parser.CommandHandler = func(command flags.Commander, args []string) error {
 		if command == nil {
 			log.SetOutput(os.Stdout)
+			// 如果是后台执行
 			if options.Daemon {
 				logFile := getSupervisordLogFile(options.Configuration)
 				Daemonize(logFile, runServer)
 			} else {
+				// 否则直接执行server
 				runServer()
 			}
 			os.Exit(0)
 		}
 		return command.Execute(args)
 	}
-
+	// 解析失败
 	if _, err := parser.Parse(); err != nil {
 		flagsErr, ok := err.(*flags.Error)
 		if ok {

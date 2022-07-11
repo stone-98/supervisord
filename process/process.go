@@ -600,6 +600,7 @@ func (p *Process) run(finishCb func()) {
 		}
 		log.WithFields(log.Fields{"program": p.GetName()}).Debug("wait program exit")
 		p.lock.Unlock()
+		// 等待启动进程的退出
 		p.waitForExit(startSecs)
 
 		atomic.StoreInt32(&programExited, 1)
