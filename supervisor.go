@@ -30,7 +30,6 @@ const (
 type Supervisor struct {
 	config     *config.Config   // supervisor configuration
 	procMgr    *process.Manager // process manager
-	xmlRPC     *XMLRPC          // XMLRPC interface
 	logger     logger.Logger    // logger manager
 	restarting bool             // if supervisor is in restarting state
 }
@@ -91,7 +90,6 @@ type ProcessTailLog struct {
 func NewSupervisor(configFile string) *Supervisor {
 	return &Supervisor{config: config.NewConfig(configFile),
 		procMgr:    process.NewManager(),
-		xmlRPC:     NewXMLRPC(),
 		restarting: false}
 }
 
@@ -447,7 +445,6 @@ func (s *Supervisor) Reload() (addedGroup []string, changedGroup []string, remov
 		s.setSupervisordInfo()
 		s.startEventListeners()
 		s.createPrograms(prevPrograms)
-		s.startHTTPServer()
 		s.startAutoStartPrograms()
 	}
 	removedPrograms := util.Sub(prevPrograms, loadedPrograms)
@@ -502,51 +499,6 @@ func (s *Supervisor) startEventListeners() {
 	if len(eventListeners) > 0 {
 		time.Sleep(1 * time.Second)
 	}
-}
-
-func (s *Supervisor) startHTTPServer() {
-	httpServerConfig, ok := s.config.GetInetHTTPServer()
-	s.xmlRPC.Stop()
-	if ok {
-		addr := httpServerConfig.GetString("port", "")
-		if addr != "" {
-			cond := sync.NewCond(&sync.Mutex{})
-			cond.L.Lock()
-			defer cond.L.Unlock()
-			go s.xmlRPC.StartInetHTTPServer(httpServerConfig.GetString("username", ""),
-				httpServerConfig.GetString("password", ""),
-				addr,
-				s,
-				func() {
-					cond.L.Lock()
-					cond.Signal()
-					cond.L.Unlock()
-				})
-			cond.Wait()
-		}
-	}
-
-	httpServerConfig, ok = s.config.GetUnixHTTPServer()
-	if ok {
-		env := config.NewStringExpression("here", s.config.GetConfigFileDir())
-		sockFile, err := env.Eval(httpServerConfig.GetString("file", "/tmp/supervisord.sock"))
-		if err == nil {
-			cond := sync.NewCond(&sync.Mutex{})
-			cond.L.Lock()
-			defer cond.L.Unlock()
-			go s.xmlRPC.StartUnixHTTPServer(httpServerConfig.GetString("username", ""),
-				httpServerConfig.GetString("password", ""),
-				sockFile,
-				s,
-				func() {
-					cond.L.Lock()
-					cond.Signal()
-					cond.L.Unlock()
-				})
-			cond.Wait()
-		}
-	}
-
 }
 
 func (s *Supervisor) setSupervisordInfo() {

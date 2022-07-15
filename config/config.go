@@ -215,22 +215,9 @@ func toRegexp(pattern string) string {
 	return strings.Join(tmp, "\\.")
 }
 
-// GetUnixHTTPServer returns unix_http_server configuration section
-func (c *Config) GetUnixHTTPServer() (*Entry, bool) {
-	entry, ok := c.entries["unix_http_server"]
-
-	return entry, ok
-}
-
 // GetSupervisord returns "supervisord" configuration section
 func (c *Config) GetSupervisord() (*Entry, bool) {
 	entry, ok := c.entries["supervisord"]
-	return entry, ok
-}
-
-// GetInetHTTPServer returns inet_http_server configuration section
-func (c *Config) GetInetHTTPServer() (*Entry, bool) {
-	entry, ok := c.entries["inet_http_server"]
 	return entry, ok
 }
 
