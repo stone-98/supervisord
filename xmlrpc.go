@@ -1,4 +1,4 @@
-package main
+package main_
 
 import (
 	"crypto/sha1" //nolint:gosec

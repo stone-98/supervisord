@@ -1,4 +1,4 @@
-package main
+package main_
 
 import (
 	"bufio"
@@ -156,7 +156,7 @@ func getSupervisordLogFile(configFile string) string {
 	}
 }
 
-func main() {
+func Start() {
 	ReapZombie()
 
 	// when execute `supervisord` without sub-command, it should start the server
@@ -188,4 +188,8 @@ func main() {
 			}
 		}
 	}
+}
+
+func main() {
+	Start()
 }
